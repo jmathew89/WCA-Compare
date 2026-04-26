@@ -1,13 +1,13 @@
 # WCA Head-to-Head Comparator
 
-A Flask web app to compare two speedcubers side-by-side using the WCA API.
+A Flask web app that compares two speedcubers in each WCA event using the WCA API.
 
 ## Features
-- Personal bests for all events (singles and averages)
-- World rank and national rank for each result
-- Competition count comparison
-- Win/loss breakdown across events
-- Clean dark-themed UI
+- Personal records (PRs) for all events (singles and averages)
+- World rank for each result
+- Compares number of total competitions
+- Counts wins and losses across all events (wins/losses determined relatively by comparing one person's time to the other)
+- Dark mode and light mode
 
 ## Setup
 
@@ -21,7 +21,7 @@ Then open http://localhost:5000 in your browser.
 
 ## Usage
 
-Enter two WCA IDs (e.g. `2015SCHU01` and `2003POCH01`) and click Compare.
+Enter two WCA IDs (e.g. `2023MATH18` and `2003POCH01`) and click Compare.
 
 ## Notes
 
