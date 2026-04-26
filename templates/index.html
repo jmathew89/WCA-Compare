@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WCA Head-to-Head</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --bg: #f7f7f5; --surface: #ffffff; --border: #e2e2de; --border-strong: #c8c8c2;
+    --p1: #1a56db; --p2: #c81e1e; --text: #111110; --muted: #6b6b67; --muted-light: #a8a8a3;
+    --badge-bg: #f0f0ec; --gold: #b45309; --silver: #6b7280; --bronze: #92400e;
+  }
+  [data-theme="dark"] {
+    --bg: #111113; --surface: #1c1c1f; --border: #2e2e32; --border-strong: #3e3e44;
+    --p1: #4f87f5; --p2: #f87171; --text: #ececec; --muted: #8c8c96; --muted-light: #5a5a64;
+    --badge-bg: #26262a; --gold: #d97706; --silver: #9ca3af; --bronze: #b45309;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; transition: background 0.2s, color 0.2s; }
+  .container { max-width: 1000px; margin: 0 auto; padding: 0 24px 80px; }
+
+  header { padding: 48px 0 36px; border-bottom: 1px solid var(--border); margin-bottom: 36px; }
+  .header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+  .site-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .header-btns { display: flex; gap: 8px; flex-shrink: 0; }
+  .hbtn {
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 4px;
+    padding: 6px 10px; cursor: pointer; font-size: 13px; color: var(--muted);
+    display: flex; align-items: center; gap: 6px; transition: all 0.15s; white-space: nowrap;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .hbtn:hover { color: var(--text); border-color: var(--text); }
+
+  h1 { font-size: 26px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; margin-bottom: 24px; }
+  .search-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ac-wrap { position: relative; }
+  .search-row input {
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; padding: 9px 13px;
+    border: 1px solid var(--border-strong); border-radius: 4px; background: var(--surface);
+    color: var(--text); width: 230px; outline: none; transition: border-color 0.15s;
+    letter-spacing: 0.03em;
+  }
+  .search-row input:focus { border-color: var(--p1); }
+  .search-row input::placeholder { color: var(--muted-light); letter-spacing: 0; }
+  .ac-dropdown {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0;
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 4px;
+    z-index: 100; min-width: 280px; max-width: 360px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  }
+  .ac-item { padding: 9px 13px; cursor: pointer; display: flex; align-items: baseline; gap: 8px; transition: background 0.1s; }
+  .ac-item:hover, .ac-item.ac-active { background: var(--bg); }
+  .ac-item:not(:last-child) { border-bottom: 1px solid var(--border); }
+  .ac-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .ac-id { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+  .vs-label { font-size: 12px; font-weight: 500; color: var(--muted); padding: 0 2px; }
+
+  .search-btn { padding: 9px 20px; background: var(--text); color: var(--bg); border: none; border-radius: 4px; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+  .search-btn:hover { opacity: 0.8; }
+  .share-btn { padding: 9px 14px; background: var(--surface); color: var(--muted); border: 1px solid var(--border-strong); border-radius: 4px; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: none; align-items: center; gap: 6px; }
+  .share-btn:hover { border-color: var(--text); color: var(--text); }
+  .share-btn.copied { color: #16a34a; border-color: #16a34a; }
+  #error-msg { margin-top: 12px; font-size: 13px; color: var(--p2); display: none; }
+
+  #loading { display: none; text-align: center; padding: 60px 0; color: var(--muted); font-size: 13px; }
+  .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--text); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #results { display: none; }
+
+  .profiles { display: grid; grid-template-columns: 1fr 48px 1fr; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); overflow: hidden; margin-bottom: 20px; }
+  .profile-card { padding: 20px 24px; }
+  .profile-card.p2 { text-align: right; }
+  .profile-name { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 3px; text-decoration: none; display: inline-block; transition: opacity 0.15s; }
+  .profile-name:hover { opacity: 0.7; }
+  .p1-card .profile-name { color: var(--p1); }
+  .p2-card .profile-name { color: var(--p2); }
+  .profile-sub { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .profile-wca-id { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted-light); }
+  .profile-stat { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); }
+  .profile-stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
+  .profile-best { font-size: 11px; color: var(--muted); margin-top: 10px; line-height: 1.4; }
+  .profile-best strong { color: var(--text); font-weight: 600; }
+  .vs-divider { display: flex; align-items: center; justify-content: center; background: var(--bg); border-left: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.05em; }
+
+  .win-summary { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 18px 24px; margin-bottom: 20px; display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+  .win-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 500; flex-shrink: 0; }
+  .win-bars { flex: 1; min-width: 180px; }
+  .win-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .win-bar-row:last-child { margin-bottom: 0; }
+  .win-bar-name { font-size: 12px; font-weight: 500; width: 80px; flex-shrink: 0; }
+  .win-bar-track { flex: 1; height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .win-bar-fill-1 { height: 100%; background: var(--p1); border-radius: 4px; transition: width 0.6s ease; }
+  .win-bar-fill-2 { height: 100%; background: var(--p2); border-radius: 4px; transition: width 0.6s ease; }
+  .win-bar-num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; width: 28px; text-align: right; }
+  .win-bar-num.p1c { color: var(--p1); }
+  .win-bar-num.p2c { color: var(--p2); }
+  .win-note { font-size: 11px; color: var(--muted); max-width: 240px; line-height: 1.4; flex-shrink: 0; }
+
+  .lower-grid { display: grid; grid-template-columns: 1fr 260px; gap: 12px; margin-bottom: 20px; }
+  .metrics-col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 18px; }
+  .metric-card.score-card { border-color: var(--border-strong); }
+  .metric-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+  .info-icon { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background: var(--badge-bg); border: 1px solid var(--border-strong); font-size: 9px; color: var(--muted); cursor: help; position: relative; flex-shrink: 0; }
+  .tooltip { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; line-height: 1.5; padding: 8px 12px; border-radius: 4px; width: 240px; z-index: 10; pointer-events: none; }
+  .tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--text); }
+  .info-icon:hover .tooltip { display: block; }
+  .metric-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .metric-name { font-size: 12px; font-weight: 500; width: 80px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar-fill-1 { background: var(--p1); height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .bar-fill-2 { background: var(--p2); height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .metric-value { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; min-width: 44px; text-align: right; }
+  .metric-value.p1c { color: var(--p1); }
+  .metric-value.p2c { color: var(--p2); }
+  .metric-note { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  .medals-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 18px; }
+  .medals-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  .medals-table th { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding: 0 0 8px; text-align: center; }
+  .medals-table th:first-child { text-align: left; }
+  .medals-table td { padding: 5px 0; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; }
+  .medals-table td:first-child { text-align: left; font-size: 12px; font-weight: 500; font-family: 'IBM Plex Sans', sans-serif; }
+  .medals-table tr:not(:last-child) td { border-bottom: 1px solid var(--border); padding-bottom: 7px; }
+  .medal-gold { color: var(--gold); } .medal-silver { color: var(--silver); } .medal-bronze { color: var(--bronze); }
+
+  /* Tab nav with sort toggle */
+  .tab-row { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+  .tab-nav { display: flex; }
+  .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; padding: 10px 18px; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
+  .sort-btn { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--muted); background: none; border: none; cursor: pointer; padding: 6px 12px; display: flex; align-items: center; gap: 5px; transition: color 0.15s; }
+  .sort-btn:hover, .sort-btn.active { color: var(--text); }
+  .sort-btn svg { transition: transform 0.2s; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 6px 6px; margin-bottom: 20px; overflow: hidden; }
+
+  .events-header, .event-row { display: grid; grid-template-columns: 88px 1fr 100px 70px 100px 1fr; gap: 6px; align-items: center; padding: 10px 16px; }
+  .events-header { background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+  .event-row { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .event-row:last-child { border-bottom: none; }
+  .event-row:hover { background: var(--bg); }
+
+  .event-name { font-size: 12px; font-weight: 500; color: var(--muted); }
+  .time-cell { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: var(--muted-light); text-align: right; }
+  .time-cell.left { text-align: left; }
+  .time-cell.winner-1 { color: var(--p1); }
+  .time-cell.winner-2 { color: var(--p2); }
+  .time-cell.tie { color: var(--text); }
+  .rank-cell { text-align: center; }
+  .rank-badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; background: var(--badge-bg); color: var(--muted); border: 1px solid var(--border); border-radius: 3px; padding: 2px 5px; line-height: 1.3; display: inline-block; }
+  .rank-nr { display: block; font-size: 10px; color: var(--muted-light); margin-top: 2px; font-family: 'IBM Plex Mono', monospace; }
+
+  .gap-cell { text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; border-radius: 3px; padding: 2px 4px; }
+  .gap-cell.gap-p1 { color: var(--p1); background: rgba(79,135,245,0.1); }
+  .gap-cell.gap-p2 { color: var(--p2); background: rgba(248,113,113,0.1); }
+  .gap-cell.gap-tie { color: var(--muted); }
+  .gap-cell.gap-none { color: var(--muted-light); }
+
+  .empty-state { padding: 24px 16px; color: var(--muted); font-size: 13px; }
+
+  /* Export overlay */
+  #export-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
+  #export-overlay.show { display: flex; }
+  .export-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; max-width: 320px; width: 90%; text-align: center; }
+  .export-box p { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .export-spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--text); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+
+  @media (max-width: 700px) {
+    .events-header, .event-row { grid-template-columns: 70px 1fr 56px 1fr; }
+    .events-header > *:nth-child(3), .events-header > *:nth-child(5), .event-row > *:nth-child(3), .event-row > *:nth-child(5) { display: none; }
+    .lower-grid { grid-template-columns: 1fr; }
+    .metrics-col { grid-template-columns: 1fr 1fr; }
+    .profiles { grid-template-columns: 1fr 36px 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-top">
+      <div class="site-label">World Cube Association — Head-to-Head</div>
+      <div class="header-btns">
+        <button class="hbtn" id="export-btn" onclick="saveAsImage()" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export image
+        </button>
+        <button class="hbtn" onclick="toggleTheme()" id="dark-btn">🌙 Dark mode</button>
+      </div>
+    </div>
+    <h1>Compare two competitors</h1>
+    <div class="search-row">
+      <div class="ac-wrap">
+        <input type="text" id="id1" placeholder="Name or WCA ID" maxlength="40" autocomplete="off"
+          oninput="onInput(this,'drop1')" onkeydown="onKey(event,'drop1','id1')" onblur="hideDrop('drop1')" />
+        <div class="ac-dropdown" id="drop1"></div>
+      </div>
+      <button class="hbtn" onclick="swapPlayers()" title="Swap competitors" style="padding:6px 10px;border-radius:4px;">⇄</button>
+      <span class="vs-label">vs.</span>
+      <div class="ac-wrap">
+        <input type="text" id="id2" placeholder="Name or WCA ID" maxlength="40" autocomplete="off"
+          oninput="onInput(this,'drop2')" onkeydown="onKey(event,'drop2','id2')" onblur="hideDrop('drop2')" />
+        <div class="ac-dropdown" id="drop2"></div>
+      </div>
+      <button class="search-btn" onclick="doCompare()">Compare</button>
+      <button class="share-btn" id="share-btn" onclick="copyLink()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Copy link
+      </button>
+    </div>
+    <div id="error-msg"></div>
+  </header>
+
+  <div id="loading"><div class="spinner"></div>Fetching profiles...</div>
+
+  <div id="results">
+    <div class="profiles">
+      <div class="profile-card p1-card" id="card1"></div>
+      <div class="vs-divider">VS</div>
+      <div class="profile-card p2 p2-card" id="card2"></div>
+    </div>
+
+    <div class="win-summary" id="win-summary"></div>
+
+    <div class="lower-grid">
+      <div class="metrics-col" id="metrics-grid"></div>
+      <div class="medals-card" id="medals-card"></div>
+    </div>
+
+    <div class="tab-row">
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="showTab(event,'singles')">Singles</button>
+        <button class="tab-btn" onclick="showTab(event,'averages')">Averages</button>
+      </div>
+      <button class="sort-btn" id="sort-btn" onclick="flipSort()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/></svg>
+        Sort by gap
+      </button>
+    </div>
+
+    <div class="tab-panel active" id="tab-singles">
+      <div class="table-wrap">
+        <div class="events-header">
+          <div>Event</div>
+          <div style="text-align:right" id="singles-h1"></div>
+          <div style="text-align:right">WR / NR</div>
+          <div style="text-align:center">Gap</div>
+          <div id="singles-h2"></div>
+          <div>WR / NR</div>
+        </div>
+        <div id="singles-rows"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-averages">
+      <div class="table-wrap">
+        <div class="events-header">
+          <div>Event</div>
+          <div style="text-align:right" id="avgs-h1"></div>
+          <div style="text-align:right">WR / NR</div>
+          <div style="text-align:center">Gap</div>
+          <div id="avgs-h2"></div>
+          <div>WR / NR</div>
+        </div>
+        <div id="avgs-rows"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Export overlay -->
+<div id="export-overlay">
+  <div class="export-box">
+    <div class="export-spinner"></div>
+    <p>Generating image...</p>
+  </div>
+</div>
+
+<script>
+  // Based on WCA rankings data: approximate number of people with a single in each event
+  const EVENT_COMPETITOR_COUNT = {
+    '333': 180000, '222': 120000, '444': 80000, '555': 55000,
+    '666': 20000,  '777': 15000,  '333bf': 18000, '333fm': 10000,
+    '333oh': 60000, 'clock': 22000, 'minx': 35000, 'pyram': 90000,
+    'skewb': 70000, 'sq1': 30000,  '444bf': 4000,  '555bf': 2000, '333mbf': 5000
+  };
+  const NO_PCT_GAP_EVENTS = new Set(['333fm', '333mbf']); // non-centisecond events
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+    document.getElementById('dark-btn').textContent = isDark ? '🌙 Dark mode' : '☀️ Light mode';
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+  }
+  (function() {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('dark-btn').textContent = '☀️ Light mode';
+      });
+    }
+  })();
+  let acTimers = {}, acSelected = { drop1: -1, drop2: -1 }, acResults = { drop1: [], drop2: [] };
+  // did they pick from dropdown or just type?
+  let acChosen = { id1: false, id2: false };
+
+  function onInput(input, dropId) {
+    const inputId = dropId === 'drop1' ? 'id1' : 'id2';
+    acChosen[inputId] = false; // user is typing again, reset
+    const q = input.value.trim();
+    clearTimeout(acTimers[dropId]);
+    if (q.length < 2) { hideDrop(dropId); return; }
+    acTimers[dropId] = setTimeout(() => fetchAC(q, dropId), 280);
+  }
+
+  async function fetchAC(q, dropId) {
+    try {
+      const r = await fetch('/search_name?q=' + encodeURIComponent(q));
+      const data = await r.json();
+      acResults[dropId] = data;
+      acSelected[dropId] = -1;
+      renderDrop(dropId);
+    } catch(e) {}
+  }
+
+  function renderDrop(dropId) {
+    const drop = document.getElementById(dropId);
+    const items = acResults[dropId];
+    if (!items.length) { drop.style.display = 'none'; return; }
+    drop.innerHTML = items.map((item, i) =>
+      '<div class="ac-item" data-idx="' + i + '" onmousedown="selectAC(\'' + dropId + '\',' + i + ')">' +
+      '<span class="ac-name">' + item.name + '</span>' +
+      '<span class="ac-id">' + item.id + '</span></div>'
+    ).join('');
+    drop.style.display = 'block';
+  }
+
+  function selectAC(dropId, idx) {
+    const item = acResults[dropId][idx];
+    if (!item) return;
+    const inputId = dropId === 'drop1' ? 'id1' : 'id2';
+    document.getElementById(inputId).value = item.id;
+    acChosen[inputId] = true;
+    hideDrop(dropId);
+  }
+
+  function hideDrop(dropId) {
+    setTimeout(() => { const d = document.getElementById(dropId); if (d) d.style.display = 'none'; }, 150);
+  }
+
+  function onKey(e, dropId, inputId) {
+    const items = acResults[dropId];
+    const drop = document.getElementById(dropId);
+    const open = drop.style.display !== 'none' && items.length;
+    if (e.key === 'ArrowDown' && open) {
+      e.preventDefault();
+      acSelected[dropId] = Math.min(acSelected[dropId] + 1, items.length - 1);
+      highlightAC(dropId);
+    } else if (e.key === 'ArrowUp' && open) {
+      e.preventDefault();
+      acSelected[dropId] = Math.max(acSelected[dropId] - 1, -1);
+      highlightAC(dropId);
+    } else if (e.key === 'Enter') {
+      if (open && acSelected[dropId] >= 0) {
+        e.preventDefault();
+        selectAC(dropId, acSelected[dropId]);
+      } else {
+        doCompare();
+      }
+    } else if (e.key === 'Escape') { hideDrop(dropId); }
+  }
+
+  function highlightAC(dropId) {
+    document.querySelectorAll('#' + dropId + ' .ac-item').forEach((el, i) => {
+      el.classList.toggle('ac-active', i === acSelected[dropId]);
+    });
+  }
+
+  // Validate inputs are WCA IDs (format: 4 digits + 4 letters + 2 digits)
+  function isWcaId(s) { return /^\d{4}[A-Z]{4}\d{2}$/.test(s.trim().toUpperCase()); }
+  function getParams() { const p = new URLSearchParams(window.location.search); return { id1: p.get('id1') || '', id2: p.get('id2') || '' }; }
+  function pushState(id1, id2) { const url = new URL(window.location); url.searchParams.set('id1', id1); url.searchParams.set('id2', id2); window.history.pushState({}, '', url); }
+
+  function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      const btn = document.getElementById('share-btn');
+      btn.textContent = 'Copied!'; btn.classList.add('copied');
+      setTimeout(() => { btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Copy link'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+  let sortByGap = false;
+  let lastData = null;
+
+  function flipSort() {
+    sortByGap = !sortByGap;
+    const btn = document.getElementById('sort-btn');
+    btn.classList.toggle('active', sortByGap);
+    btn.querySelector('svg').style.transform = sortByGap ? 'rotate(180deg)' : '';
+    if (lastData) drawEventRows(lastData);
+  }
+  function showTab(e, name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    e.target.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+  function swapPlayers() {
+    const i1 = document.getElementById('id1'), i2 = document.getElementById('id2');
+    const tmp = i1.value; i1.value = i2.value; i2.value = tmp;
+    // Also swap autocomplete results/state
+    const tmpR = acResults.drop1; acResults.drop1 = acResults.drop2; acResults.drop2 = tmpR;
+  }
+  async function doCompare() {
+    const v1 = document.getElementById('id1').value.trim().toUpperCase();
+    const v2 = document.getElementById('id2').value.trim().toUpperCase();
+    const errEl = document.getElementById('error-msg');
+    errEl.style.display = 'none';
+    if (!v1 || !v2) { errEl.textContent = 'Please enter two WCA IDs or select from the dropdown.'; errEl.style.display = 'block'; return; }
+    // Warn if either value doesn't look like a WCA ID
+    if (!isWcaId(v1) || !isWcaId(v2)) {
+      errEl.textContent = 'Please select a competitor from the dropdown — don\'t just type a name.';
+      errEl.style.display = 'block'; return;
+    }
+    pushState(v1, v2);
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('share-btn').style.display = 'none';
+    document.getElementById('export-btn').style.display = 'none';
+    try {
+      const res = await fetch('/compare?id1=' + encodeURIComponent(v1) + '&id2=' + encodeURIComponent(v2));
+      const data = await res.json();
+      if (!res.ok) { errEl.textContent = data.error || 'An error occurred.'; errEl.style.display = 'block'; document.getElementById('loading').style.display = 'none'; return; }
+      lastData = data;
+      render(data);
+      document.getElementById('share-btn').style.display = 'inline-flex';
+      document.getElementById('export-btn').style.display = 'flex';
+    } catch (e) { errEl.textContent = 'Network error. Please try again.'; errEl.style.display = 'block'; }
+    document.getElementById('loading').style.display = 'none';
+  }
+  function flag(iso2) { if (!iso2) return ''; return iso2.toUpperCase().replace(/./g, c => String.fromCodePoint(c.charCodeAt(0) + 127397)); }
+
+  function rankDisplay(wr, nr) {
+    if (!wr && !nr) return '<span style="color:var(--muted-light);font-size:11px;">—</span>';
+    let html = '';
+    if (wr) html += '<span class="rank-badge">WR ' + wr.toLocaleString() + '</span>';
+    if (nr) html += '<span class="rank-nr">NR ' + nr.toLocaleString() + '</span>';
+    return html;
+  }
+
+  function timeCell(time, winner, side) {
+    let cls = 'time-cell' + (side === '2' ? ' left' : '');
+    if (time !== '-') { if (winner === side) cls += ' winner-' + side; else if (winner === 'tie') cls += ' tie'; }
+    return '<div class="' + cls + '">' + time + '</div>';
+  }
+
+  function pctDiff(raw1, raw2, winner, eventId) {
+    // Skip % gap for events where centiseconds don't apply directly
+    if (NO_PCT_GAP_EVENTS.has(eventId)) return '<div class="gap-cell gap-none">—</div>';
+    if (raw1 == null || raw2 == null) return '<div class="gap-cell gap-none">—</div>';
+    if (raw1 === raw2) return '<div class="gap-cell gap-tie">tie</div>';
+    const faster = Math.min(raw1, raw2), slower = Math.max(raw1, raw2);
+    const pct = ((slower - faster) / faster * 100).toFixed(1);
+    const cls = winner === '1' ? 'gap-p1' : 'gap-p2';
+    return '<div class="gap-cell ' + cls + '">' + pct + '%</div>';
+  }
+
+  function rawGap(raw1, raw2, eventId) {
+    if (NO_PCT_GAP_EVENTS.has(eventId) || raw1 == null || raw2 == null) return -1;
+    const faster = Math.min(raw1, raw2), slower = Math.max(raw1, raw2);
+    return (slower - faster) / faster;
+  }
+
+  // Best event: score = log10(eventCompetitors / WR). Higher = better relative rank 
+  function relativeStrength(wr, eventId) {
+    if (!wr || wr <= 0) return -Infinity;
+    const total = EVENT_COMPETITOR_COUNT[eventId] || 10000;
+    return Math.log10(total / wr);
+  }
+
+  function strongestEvent(events, playerNum) {
+    let best = null, bestScore = -Infinity;
+    const wrKey = 'single_wr' + playerNum;
+    const avgWrKey = 'avg_wr' + playerNum;
+    events.forEach(e => {
+      const swr = e[wrKey], awr = e[avgWrKey];
+      const ss = relativeStrength(swr, e.id);
+      const as = relativeStrength(awr, e.id);
+      if (ss > bestScore) { bestScore = ss; best = { name: e.name, wr: swr, type: 'Single', score: ss }; }
+      if (as > bestScore) { bestScore = as; best = { name: e.name, wr: awr, type: 'Avg', score: as }; }
+    });
+    return best;
+  }
+  function render(data) {
+    const p1 = data.p1, p2 = data.p2;
+    const first1 = p1.name.split(' ')[0], first2 = p2.name.split(' ')[0];
+
+    const best1 = strongestEvent(data.events, 1);
+    const best2 = strongestEvent(data.events, 2);
+
+    function bestEventHtml(best) {
+      if (!best) return '';
+      return '<div class="profile-best">Best event: <strong>' + best.name + '</strong> (' + best.type + ' WR #' + best.wr.toLocaleString() + ')</div>';
+    }
+
+    document.getElementById('card1').innerHTML =
+      '<a class="profile-name" href="https://www.worldcubeassociation.org/persons/' + p1.id + '" target="_blank" rel="noopener">' + p1.name + '</a>' +
+      '<div class="profile-sub">' + flag(p1.country_iso) + ' ' + p1.country + ' &nbsp;·&nbsp; <span class="profile-wca-id">' + p1.id + '</span></div>' +
+      '<div class="profile-stat">' + p1.comps + '</div>' +
+      '<div class="profile-stat-label">Competitions</div>' +
+      bestEventHtml(best1);
+
+    document.getElementById('card2').innerHTML =
+      '<a class="profile-name" href="https://www.worldcubeassociation.org/persons/' + p2.id + '" target="_blank" rel="noopener">' + p2.name + '</a>' +
+      '<div class="profile-sub">' + flag(p2.country_iso) + ' ' + p2.country + ' &nbsp;·&nbsp; <span class="profile-wca-id">' + p2.id + '</span></div>' +
+      '<div class="profile-stat">' + p2.comps + '</div>' +
+      '<div class="profile-stat-label">Competitions</div>' +
+      bestEventHtml(best2);
+
+    // Wins
+    let w1 = 0, w2 = 0;
+    data.events.forEach(e => {
+      if (e.single_winner === '1') w1++; else if (e.single_winner === '2') w2++;
+      if (e.avg_winner === '1') w1++; else if (e.avg_winner === '2') w2++;
+    });
+    const totalMax = w1 + w2 || 1;
+
+    document.getElementById('win-summary').innerHTML =
+      '<div class="win-label">Event wins</div>' +
+      '<div class="win-bars">' +
+        '<div class="win-bar-row"><div class="win-bar-name" style="color:var(--p1);font-weight:600">' + first1 + '</div><div class="win-bar-track"><div class="win-bar-fill-1" style="width:' + (w1/totalMax*100) + '%"></div></div><div class="win-bar-num p1c">' + w1 + '</div></div>' +
+        '<div class="win-bar-row"><div class="win-bar-name" style="color:var(--p2);font-weight:600">' + first2 + '</div><div class="win-bar-track"><div class="win-bar-fill-2" style="width:' + (w2/totalMax*100) + '%"></div></div><div class="win-bar-num p2c">' + w2 + '</div></div>' +
+      '</div>' +
+      '<div class="win-note">Faster PB in each event = 1 win (singles &amp; averages each count). If only one person has a result, they win that event automatically.</div>';
+
+    // Metrics
+    let bestWR1=Infinity, bestWR2=Infinity, totalWR1=0, totalWR2=0, wrCount1=0, wrCount2=0, score1=0, score2=0;
+    data.events.forEach(e => {
+      [['single_wr1',1],['avg_wr1',1],['single_wr2',2],['avg_wr2',2]].forEach(function(pair) {
+        const v = e[pair[0]], n = pair[1];
+        if (!v) return;
+        const total = EVENT_COMPETITOR_COUNT[e.id] || 10000;
+        const s = Math.log10(total / v) * 10; // weighted by relative depth
+        if (n===1) { bestWR1=Math.min(bestWR1,v); totalWR1+=v; wrCount1++; score1+=s; }
+        else { bestWR2=Math.min(bestWR2,v); totalWR2+=v; wrCount2++; score2+=s; }
+      });
+    });
+    const avgWR1 = wrCount1 ? Math.round(totalWR1/wrCount1) : null;
+    const avgWR2 = wrCount2 ? Math.round(totalWR2/wrCount2) : null;
+    const bwr1 = bestWR1===Infinity ? null : bestWR1;
+    const bwr2 = bestWR2===Infinity ? null : bestWR2;
+    const s1 = Math.round(score1*10)/10, s2 = Math.round(score2*10)/10;
+
+    function statBar(label, v1, v2, lowerBetter, fmtFn, note, extraClass, tipText) {
+      const maxV = Math.max(v1||0, v2||0) || 1;
+      const pct = v => v == null ? 4 : Math.max(4, lowerBetter ? (1-v/maxV)*100 : (v/maxV)*100);
+      const lead1 = v1!=null && v2!=null && (lowerBetter ? v1<v2 : v1>v2);
+      const lead2 = v1!=null && v2!=null && (lowerBetter ? v2<v1 : v2>v1);
+      const info = tipText ? '<span class="info-icon">?<span class="tooltip">' + tipText + '</span></span>' : '';
+      return '<div class="metric-card' + (extraClass ? ' '+extraClass : '') + '">' +
+        '<div class="metric-label">' + label + info + '</div>' +
+        '<div class="metric-bar-row"><div class="metric-name" style="color:var(--p1);font-weight:' + (lead1?600:400) + '">' + first1 + '</div><div class="bar-track"><div class="bar-fill-1" style="width:' + pct(v1) + '%"></div></div><div class="metric-value p1c">' + fmtFn(v1) + '</div></div>' +
+        '<div class="metric-bar-row"><div class="metric-name" style="color:var(--p2);font-weight:' + (lead2?600:400) + '">' + first2 + '</div><div class="bar-track"><div class="bar-fill-2" style="width:' + pct(v2) + '%"></div></div><div class="metric-value p2c">' + fmtFn(v2) + '</div></div>' +
+        '<div class="metric-note">' + note + '</div></div>';
+    }
+
+    const fmtRank  = v => v==null ? '—' : '#'+v.toLocaleString();
+    const fmtScore = v => v==null ? '—' : v.toFixed(1);
+    const scoreTip = 'Sum of log\u2081\u2080(event_competitors / WR) \xd7 10, across all ranked results. Uses actual competitor counts per event, so WR #1,000 in 3x3 outscores WR #500 in 7x7. Higher = better.';
+
+    document.getElementById('metrics-grid').innerHTML =
+      statBar('Overall score', s1, s2, false, fmtScore, 'Depth-adjusted WR score across all events', 'score-card', scoreTip) +
+      statBar('Best world rank', bwr1, bwr2, true, fmtRank, 'Peak WR across all events', '', null) +
+      statBar('Avg. world rank', avgWR1, avgWR2, true, fmtRank, 'Mean WR across all ranked results', '', null);
+
+    const m1 = p1.medals || {}, m2 = p2.medals || {};
+    document.getElementById('medals-card').innerHTML =
+      '<div class="metric-label">Competition podiums</div>' +
+      '<table class="medals-table"><thead><tr><th></th><th style="color:var(--p1)">' + first1 + '</th><th style="color:var(--p2)">' + first2 + '</th></tr></thead><tbody>' +
+      '<tr><td>\uD83E\uDD47 Gold</td><td class="medal-gold">' + (m1.gold ?? '—') + '</td><td class="medal-gold">' + (m2.gold ?? '—') + '</td></tr>' +
+      '<tr><td>\uD83E\uDD48 Silver</td><td class="medal-silver">' + (m1.silver ?? '—') + '</td><td class="medal-silver">' + (m2.silver ?? '—') + '</td></tr>' +
+      '<tr><td>\uD83E\uDD49 Bronze</td><td class="medal-bronze">' + (m1.bronze ?? '—') + '</td><td class="medal-bronze">' + (m2.bronze ?? '—') + '</td></tr>' +
+      '</tbody></table>';
+
+    document.getElementById('singles-h1').textContent = first1;
+    document.getElementById('singles-h2').textContent = first2;
+    document.getElementById('avgs-h1').textContent = first1;
+    document.getElementById('avgs-h2').textContent = first2;
+
+    drawEventRows(data);
+    document.getElementById('results').style.display = 'block';
+  }
+
+  function drawEventRows(data) {
+    let sEvents = data.events.filter(e => e.single1 !== '-' || e.single2 !== '-');
+    let aEvents = data.events.filter(e => e.avg1 !== '-' || e.avg2 !== '-');
+
+    if (sortByGap) {
+      sEvents = sEvents.slice().sort((a, b) => rawGap(b.raw_single1, b.raw_single2, b.id) - rawGap(a.raw_single1, a.raw_single2, a.id));
+      aEvents = aEvents.slice().sort((a, b) => rawGap(b.raw_avg1, b.raw_avg2, b.id) - rawGap(a.raw_avg1, a.raw_avg2, a.id));
+    }
+
+    document.getElementById('singles-rows').innerHTML = sEvents.map(e =>
+      '<div class="event-row">' +
+        '<div class="event-name">' + e.name + '</div>' +
+        timeCell(e.single1, e.single_winner, '1') +
+        '<div class="rank-cell">' + rankDisplay(e.single_wr1, e.single_nr1) + '</div>' +
+        pctDiff(e.raw_single1, e.raw_single2, e.single_winner, e.id) +
+        '<div class="rank-cell">' + rankDisplay(e.single_wr2, e.single_nr2) + '</div>' +
+        timeCell(e.single2, e.single_winner, '2') +
+      '</div>'
+    ).join('') || '<div class="empty-state">No single results.</div>';
+
+    document.getElementById('avgs-rows').innerHTML = aEvents.map(e =>
+      '<div class="event-row">' +
+        '<div class="event-name">' + e.name + '</div>' +
+        timeCell(e.avg1, e.avg_winner, '1') +
+        '<div class="rank-cell">' + rankDisplay(e.avg_wr1, e.avg_nr1) + '</div>' +
+        pctDiff(e.raw_avg1, e.raw_avg2, e.avg_winner, e.id) +
+        '<div class="rank-cell">' + rankDisplay(e.avg_wr2, e.avg_nr2) + '</div>' +
+        timeCell(e.avg2, e.avg_winner, '2') +
+      '</div>'
+    ).join('') || '<div class="empty-state">No average results.</div>';
+  }
+  async function saveAsImage() {
+    const overlay = document.getElementById('export-overlay');
+    overlay.classList.add('show');
+    try {
+      const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#f7f7f5';
+      const opts = { backgroundColor: bg, scale: 2, useCORS: true, logging: false };
+
+      // Show singles tab, capture
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-singles').classList.add('active');
+      const cSingles = await html2canvas(document.getElementById('results'), opts);
+
+      // Show averages tab, capture
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-averages').classList.add('active');
+      const cAvgs = await html2canvas(document.getElementById('results'), opts);
+
+      // Restore original active tab
+      document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      document.getElementById('tab-singles').classList.add('active');
+
+      // Stack the two canvases vertically with a gap
+      const gap = 20 * 2; // 20px gap at scale 2
+      const W = cSingles.width;
+      const H = cSingles.height + gap + cAvgs.height;
+      const merged = document.createElement('canvas');
+      merged.width = W; merged.height = H;
+      const ctx = merged.getContext('2d');
+      // Fill background
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+      ctx.drawImage(cSingles, 0, 0);
+      ctx.drawImage(cAvgs, 0, cSingles.height + gap);
+
+      const link = document.createElement('a');
+      link.download = 'wca-comparison.png';
+      link.href = merged.toDataURL('image/png');
+      link.click();
+    } catch(e) { alert('Export failed. Try again.'); }
+    overlay.classList.remove('show');
+  }
+  window.addEventListener('DOMContentLoaded', () => {
+    const { id1, id2 } = getParams();
+    if (id1 && id2 && isWcaId(id1) && isWcaId(id2)) {
+      document.getElementById('id1').value = id1;
+      document.getElementById('id2').value = id2;
+      doCompare();
+    }
+  });
+</script>
+</body>
+</html>
